@@ -1,143 +1,142 @@
-# Confeitaria 7.0 - Sistema de Gestão para Confeitarias
+# SaaS Gestão Confeitaria 7.0
 
-Sistema completo de gestão para confeitarias com autenticação Supabase, verificação de assinatura Stripe e interface moderna.
+Sistema completo de gestão para confeitarias com autenticação via webhook Stripe e persistência de sessão.
 
-## 🚀 Funcionalidades
+## 🚀 Como Funciona
 
-- **Landing Page**: Apresentação do produto com CTA para assinatura
-- **Autenticação**: Login/cadastro com Supabase Auth
-- **Verificação de Assinatura**: Integração com Stripe para validar assinaturas ativas
-- **Dashboard Completo**: Gestão de pedidos, clientes e produtos
-- **Responsivo**: Interface otimizada para desktop e mobile
+### Fluxo de Autenticação
+1. **Usuário assina** → Paga via Stripe Checkout
+2. **Webhook processa** → Cria usuário no Supabase automaticamente
+3. **Email enviado** → Link de acesso direto (magic link)
+4. **Sessão persistente** → Usuário fica logado automaticamente
 
-## 📋 Pré-requisitos
+### Tecnologias
+- **Frontend**: React + TypeScript + Vite + Tailwind CSS
+- **Backend**: Supabase (Auth + Database + Edge Functions)
+- **Pagamentos**: Stripe + Webhooks
+- **Deploy**: Netlify (Frontend) + Supabase (Backend)
 
-- Node.js 18+
-- Conta no Supabase
-- Conta no Stripe
-- Conta no Netlify (para deploy)
+## 🛠️ Configuração para Deploy
 
-## 🛠️ Configuração Local
+### 1. Variáveis de Ambiente
 
-### 1. Clone e instale dependências
+#### Frontend (Netlify)
+```
+VITE_SUPABASE_URL=https://stasbepnjxxyifjhprwu.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0YXNiZXBuanh4eWlmamhwcnd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDgwNDAsImV4cCI6MjA3MDQyNDA0MH0.K2Sbf8kmldeUN2OtegGAhATEP7jvUJ6us-5SNemTwZY
+VITE_SUPABASE_FUNCTIONS_URL=https://stasbepnjxxyifjhprwu.supabase.co/functions/v1
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_51Rt8pCB1cuFGKX9I3b7x7HykxRsCoY42gCUxENl9EwYyTTXq2356MsHRjo8IejZXfch5q8RFzpRwzDPNvasifLOr00PJG0yQAA
+VITE_STRIPE_CHECKOUT_URL=https://buy.stripe.com/test_dRmeVcfyGeKJ6np0lEefC03
+```
+
+#### Backend (Supabase Edge Functions)
+```
+STRIPE_SECRET_KEY=sk_test_... (sua chave secreta do Stripe)
+STRIPE_WEBHOOK_SECRET=whsec_... (secret do webhook do Stripe)
+```
+
+### 2. Configurar Webhook no Stripe
+
+1. Acesse [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks)
+2. Clique em "Add endpoint"
+3. URL: `https://stasbepnjxxyifjhprwu.supabase.co/functions/v1/stripe-webhook`
+4. Eventos para escutar:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+5. Copie o "Signing secret" e adicione como `STRIPE_WEBHOOK_SECRET`
+
+### 3. Deploy das Edge Functions
 
 ```bash
+# Instalar Supabase CLI
+npm install -g supabase
+
+# Login no Supabase
+supabase login
+
+# Deploy das funções
+supabase functions deploy stripe-webhook --project-ref stasbepnjxxyifjhprwu
+```
+
+### 4. Executar Migrações do Database
+
+1. Vá no painel do Supabase > SQL Editor
+2. Execute o conteúdo de `supabase/migrations/create_user_subscriptions.sql`
+
+### 5. Deploy do Frontend
+
+#### Netlify
+1. Conecte seu repositório ao Netlify
+2. Configure as variáveis de ambiente
+3. Build command: `npm run build`
+4. Publish directory: `dist`
+
+## 📋 Funcionalidades
+
+### ✅ Sistema de Pagamento e Autenticação
+- Landing page com checkout Stripe
+- Webhook processa pagamento e cria usuário
+- Login via magic link (sem senha)
+- Sessão persistente no navegador
+- Verificação automática de assinatura
+
+### ✅ Dashboard Completo
+- 📦 **Pedidos**: CRUD completo com status
+- 👥 **Clientes**: Gestão de dados e contatos
+- 🎂 **Produtos**: Catálogo com preços e categorias
+- 🔍 **Busca**: Filtros em tempo real
+- 📱 **Responsivo**: Funciona em todos os dispositivos
+
+### ✅ Segurança
+- Row Level Security (RLS) em todas as tabelas
+- Políticas baseadas no usuário autenticado
+- Webhook com verificação de assinatura
+- Chaves secretas apenas no backend
+
+## 🔄 Fluxo Completo
+
+1. **Usuário acessa** → Landing page
+2. **Clica "Começar"** → Stripe Checkout
+3. **Paga assinatura** → Webhook ativado
+4. **Webhook processa** → Cria usuário + assinatura no Supabase
+5. **Usuário clica "Entrar"** → Digita email
+6. **Recebe magic link** → Clica e entra automaticamente
+7. **Sessão persistente** → Fica logado mesmo fechando navegador
+8. **Acesso liberado** → Dashboard completo disponível
+
+## 🔧 Desenvolvimento Local
+
+```bash
+# Instalar dependências
 npm install
-```
 
-### 2. Configure variáveis de ambiente
-
-Copie o arquivo `.env.example` para `.env`:
-
-```bash
+# Configurar variáveis (copiar .env.example para .env)
 cp .env.example .env
-```
 
-As variáveis já estão configuradas no `.env.example` com os valores corretos.
-
-### 3. Execute o projeto
-
-```bash
+# Executar em desenvolvimento
 npm run dev
 ```
 
-## 🚀 Deploy
+## 📊 Monitoramento
 
-### 1. Deploy do Frontend (Netlify)
-
-1. Conecte seu repositório ao Netlify
-2. Configure as variáveis de ambiente no Netlify:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_SUPABASE_FUNCTIONS_URL`
-   - `VITE_STRIPE_PUBLISHABLE_KEY`
-
-3. O deploy será automático com as configurações do `netlify.toml`
-
-### 2. Deploy da Edge Function (Supabase)
-
-1. Instale o Supabase CLI:
-```bash
-npm install -g supabase
-```
-
-2. Faça login no Supabase:
-```bash
-supabase login
-```
-
-3. Configure a variável de ambiente no Supabase:
-   - Acesse o painel do Supabase
-   - Vá em Settings > Edge Functions
-   - Adicione a variável `STRIPE_SECRET_KEY` com sua chave secreta do Stripe
-
-4. Deploy da função:
-```bash
-supabase functions deploy check-subscription --project-ref stasbepnjxxyifjhprwu
-```
-
-## 🔧 Configuração do Banco de Dados
-
-Execute as migrações no Supabase para criar as tabelas necessárias:
-
-```sql
--- As migrações estão em supabase/migrations/
--- Elas serão executadas automaticamente se você usar o Supabase CLI
--- Ou você pode executá-las manualmente no SQL Editor do Supabase
-```
-
-## 💳 Configuração do Stripe
-
-1. **Produto já configurado**: 
-   - Price ID: `price_1RuOijB1cuFGKX9IiXufwpJU`
-   - Payment Link: `https://buy.stripe.com/test_dRmeVcfyGeKJ6np0lEefC03`
-
-2. **Chaves necessárias**:
-   - Publishable Key (frontend): `pk_test_51Rt8pCB1cuFGKX9I3b7x7HykxRsCoY42gCUxENl9EwYyTTXq2356MsHRjo8IejZXfch5q8RFzpRwzDPNvasifLOr00PJG0yQAA`
-   - Secret Key (backend): Configure no Supabase Edge Functions
-
-## 🔐 Segurança
-
-- ✅ Todas as chaves públicas usam prefixo `VITE_`
-- ✅ Nenhuma chave secreta no frontend
-- ✅ Chave secreta do Stripe apenas no backend (Edge Function)
-- ✅ RLS habilitado em todas as tabelas
-- ✅ Políticas de segurança configuradas
-
-## 📱 Estrutura do Projeto
-
-```
-src/
-├── components/          # Componentes reutilizáveis
-├── contexts/           # Contextos React (Auth)
-├── lib/               # Configurações (Supabase)
-├── pages/             # Páginas da aplicação
-└── main.tsx           # Ponto de entrada
-
-supabase/
-├── functions/         # Edge Functions
-└── migrations/        # Migrações do banco
-```
-
-## 🎯 Fluxo de Funcionamento
-
-1. **Landing**: Usuário vê apresentação e clica em "Começar Agora"
-2. **Stripe**: Usuário é direcionado para checkout do Stripe
-3. **Cadastro**: Após pagamento, usuário se cadastra na aplicação
-4. **Verificação**: Sistema verifica assinatura ativa via Edge Function
-5. **Dashboard**: Acesso liberado para gestão completa da confeitaria
+- **Stripe Dashboard**: Acompanhe pagamentos e assinaturas
+- **Supabase Dashboard**: Monitore usuários e dados
+- **Logs**: Edge Functions mostram processamento dos webhooks
 
 ## 🆘 Troubleshooting
 
-### Erro de autenticação
-- Verifique se as variáveis do Supabase estão corretas
-- Confirme que o usuário está cadastrado no Supabase Auth
+### Webhook não funciona
+- Verifique se a URL está correta no Stripe
+- Confirme se o `STRIPE_WEBHOOK_SECRET` está configurado
+- Veja os logs na aba Functions do Supabase
 
-### Erro de assinatura
-- Verifique se a Edge Function foi deployada
-- Confirme que `STRIPE_SECRET_KEY` está configurada no Supabase
-- Verifique se o email do usuário tem assinatura ativa no Stripe
+### Usuário não consegue entrar
+- Verifique se o pagamento foi processado no Stripe
+- Confirme se o webhook foi executado (logs do Supabase)
+- Verifique se o email está correto
 
-### Erro de deploy
-- Confirme que todas as variáveis estão configuradas no Netlify
-- Verifique se o `netlify.toml` está na raiz do projeto
+### Sessão não persiste
+- Confirme se `persistSession: true` está configurado
+- Verifique se não há conflitos de localStorage
+- Teste em modo incógnito para descartar cache
