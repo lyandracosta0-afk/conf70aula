@@ -20,7 +20,8 @@ interface AuthContextType {
   loading: boolean
   hasActiveSubscription: boolean
   subscription: UserSubscription | null
-  signInWithEmail: (email: string) => Promise<{ error: any }>
+  signInWithEmailPassword: (email: string, password: string) => Promise<{ error: any }>
+  signUpWithEmailPassword: (email: string, password: string) => Promise<{ error: any }>
   signOut: () => Promise<void>
   checkSubscription: () => Promise<void>
   sendPasswordReset: (email: string) => Promise<{ error: any }>
@@ -112,39 +113,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user])
 
-  const signInWithEmail = async (email: string) => {
+  const signInWithEmailPassword = async (email: string, password: string) => {
     try {
-      // First check if user exists and has an active subscription
-      const { data: subscriptionData } = await supabase
-        .from('user_subscriptions')
-        .select('*')
-        .eq('email', email)
-        .eq('subscription_status', 'active')
-        .single()
-
-      if (!subscriptionData) {
-        return { 
-          error: { 
-            message: 'Usuário não encontrado ou assinatura inativa. Você precisa assinar primeiro.' 
-          } 
-        }
-      }
-
-      // Send magic link for passwordless login
-      const { error } = await supabase.auth.signInWithOtp({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
+        password
+      })
+
+      return { error }
+    } catch (error) {
+      return { error: { message: 'Erro ao fazer login. Tente novamente.' } }
+    }
+  }
+
+  const signUpWithEmailPassword = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
       })
 
-      if (error) {
-        return { error }
-      }
-
-      return { error: null }
+      return { error }
     } catch (error) {
-      return { error: { message: 'Erro ao fazer login. Tente novamente.' } }
+      return { error: { message: 'Erro ao criar conta. Tente novamente.' } }
     }
   }
 
@@ -166,7 +160,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     hasActiveSubscription,
     subscription,
-    signInWithEmail,
+    signInWithEmailPassword,
+    signUpWithEmailPassword,
     signOut,
     checkSubscription,
     sendPasswordReset
